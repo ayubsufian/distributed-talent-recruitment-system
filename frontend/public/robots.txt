@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow crawling of private dashboards and authenticated routes
+Disallow: /admin/
+Disallow: /recruiter/
+Disallow: /applications/
+Disallow: /notifications/
