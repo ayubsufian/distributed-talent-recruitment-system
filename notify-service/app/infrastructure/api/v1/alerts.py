@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from app.domain.models import NotificationResponse
 from app.application.notify_use_cases import (
     GetUserNotificationsUseCase,
@@ -7,24 +7,23 @@ from app.application.notify_use_cases import (
 )
 
 
-# Mock Auth Dependency (In real app, use shared auth lib)
 async def get_current_user_id():
-    # In production, decode JWT here
     return "user_123_placeholder"
 
 
 router = APIRouter()
 
 
-def get_fetch_use_case(request):
+def get_fetch_use_case(request: Request):
     return request.app.state.get_notes_use_case
 
 
-def get_mark_use_case(request):
+def get_mark_use_case(request: Request):
     return request.app.state.mark_read_use_case
 
 
-@router.get("/", response_model=List[NotificationResponse])
+# --- FIX: Matches /notifications exactly ---
+@router.get("", response_model=List[NotificationResponse])
 async def get_my_notifications(
     user_id: str = Depends(get_current_user_id),
     use_case: GetUserNotificationsUseCase = Depends(get_fetch_use_case),

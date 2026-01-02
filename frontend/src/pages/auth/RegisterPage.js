@@ -12,7 +12,7 @@ export const RegisterPage = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: ROLES.CANDIDATE,
+    role: ROLES.CANDIDATE, // Default value
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,8 +20,13 @@ export const RegisterPage = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Updates the state based on input 'name' attribute
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -29,14 +34,16 @@ export const RegisterPage = () => {
     setIsSubmitting(true);
     setError('');
 
-    // Call the register use case from AuthContext
+    // --- DEBUG: Check your console (F12) to see if all 3 fields are here ---
+    console.log('Submitting to Backend:', formData);
+
     const result = await register(formData);
 
     if (result.success) {
-      // On success, redirect to login page
+      // Success: Proceed to login
       navigate('/auth/login');
     } else {
-      // result.error is now guaranteed to be a string thanks to AuthContext logic
+      // result.error is now a descriptive string from AuthContext
       setError(result.error);
       setIsSubmitting(false);
     }
@@ -55,7 +62,7 @@ export const RegisterPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <Card>
-          {/* --- Error Alert Box --- */}
+          {/* --- Detailed Error Alert --- */}
           {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 animate-fade-in">
               <div className="flex">
@@ -73,49 +80,59 @@ export const RegisterPage = () => {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Email Input */}
             <FormField label="Email address">
               <Input
                 name="email"
                 type="email"
                 placeholder="you@example.com"
                 required
+                autoComplete="email"
                 value={formData.email}
                 onChange={handleChange}
               />
             </FormField>
 
+            {/* Password Input */}
             <FormField label="Password">
               <Input
                 name="password"
                 type="password"
                 placeholder="••••••••"
                 required
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange}
               />
             </FormField>
 
+            {/* Role Selection Dropdown */}
             <FormField label="I am a...">
               <select
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md appearance-none bg-white"
+                required
               >
                 <option value={ROLES.CANDIDATE}>Candidate</option>
                 <option value={ROLES.RECRUITER}>Recruiter</option>
               </select>
             </FormField>
 
-            <Button type="submit" className="w-full" isLoading={isSubmitting}>
-              Register
+            <Button
+              type="submit"
+              className="w-full py-3"
+              isLoading={isSubmitting}
+            >
+              Create Account
             </Button>
           </form>
 

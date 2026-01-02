@@ -28,10 +28,10 @@ services:
     networks:
       - recruitment-network
     healthcheck:
-      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      test: rabbitmq-diagnostics -q ping
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   # ---------------------------------------------------------------------------
   # MICROSERVICES

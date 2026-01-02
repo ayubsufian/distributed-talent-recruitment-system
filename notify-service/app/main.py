@@ -62,13 +62,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Notification Service", lifespan=lifespan)
 
+# FIX: Add the prefix here. This combines with the "" in alerts.py
 app.include_router(alerts.router, prefix="/notifications", tags=["Notifications"])
-app.include_router(
-    system.router, prefix="/system", tags=["System"]
-)  # <--- Register System Router
+app.include_router(system.router, prefix="/system", tags=["System"])
 
 
-@app.get("/health")
+@app.get("/notifications/health")
 async def health_check():
     return {
         "status": "healthy",

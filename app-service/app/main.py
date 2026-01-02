@@ -71,11 +71,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Application Service", lifespan=lifespan)
 
-# Register Routers
+# FIX: Add the prefix here. This combines with the "" in apps.py
 app.include_router(apps.router, prefix="/applications", tags=["Applications"])
 
 
-@app.get("/health")
+@app.get("/applications/health")
 async def health_check():
     return {
         "status": "healthy",

@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -10,14 +9,13 @@ from app.application.interfaces.repository import IUserRepository
 class MongoUserRepository(IUserRepository):
 
     def __init__(self, client: AsyncIOMotorClient, db_name: str):
-        # Use the passed db_name to select the database
         self.db = client[db_name]
         self.collection = self.db["users"]
 
     def _map_to_domain(self, user_doc: dict) -> User:
         if not user_doc:
             return None
-        # Convert ObjectId to string for the domain model
+        # Map MongoDB _id to Pydantic id
         user_doc["id"] = str(user_doc["_id"])
         return User(**user_doc)
 
@@ -34,7 +32,8 @@ class MongoUserRepository(IUserRepository):
         return self._map_to_domain(user_doc)
 
     async def save(self, user: User) -> User:
-        user_dict = user.dict(exclude={"id"})
+        # Pydantic v2: use model_dump()
+        user_dict = user.model_dump(exclude={"id"})
 
         if user.id:
             # Update existing
@@ -45,6 +44,7 @@ class MongoUserRepository(IUserRepository):
         else:
             # Insert new
             result = await self.collection.insert_one(user_dict)
+            # Ensure the returned entity has the new ID as a string
             user.id = str(result.inserted_id)
             return user
 

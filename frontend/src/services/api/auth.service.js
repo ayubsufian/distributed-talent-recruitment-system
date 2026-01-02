@@ -3,16 +3,17 @@ import { API_ROUTES } from '../../core/constants';
 
 export const AuthService = {
   login: async (email, password) => {
-    // Uses OAuth2PasswordRequestForm format expected by FastAPI
     const formData = new FormData();
     formData.append('username', email);
     formData.append('password', password);
 
+    // Verify there is only ONE slash between the variable and 'login'
     const response = await apiClient.post(`${API_ROUTES.AUTH}/login`, formData);
     return response.data;
   },
 
   register: async (userData) => {
+    // Verify there is only ONE slash here too
     const response = await apiClient.post(
       `${API_ROUTES.AUTH}/register`,
       userData

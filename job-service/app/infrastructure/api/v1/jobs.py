@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from app.domain.models import JobResponse, JobCreate
 from app.application.job_use_cases import (
     CreateJobUseCase,
@@ -12,24 +12,24 @@ from app.infrastructure.api.auth_deps import require_recruiter, require_admin
 router = APIRouter()
 
 
-# Dependency Helpers
-def get_create_use_case(request):
+def get_create_use_case(request: Request):
     return request.app.state.create_job_use_case
 
 
-def get_list_use_case(request):
+def get_list_use_case(request: Request):
     return request.app.state.get_jobs_use_case
 
 
-def get_detail_use_case(request):
+def get_detail_use_case(request: Request):
     return request.app.state.get_job_detail_use_case
 
 
-def get_admin_delete_use_case(request):
+def get_admin_delete_use_case(request: Request):
     return request.app.state.admin_delete_job_use_case
 
 
-@router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
+# --- FIX: Empty string matches /jobs exactly ---
+@router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(
     job_in: JobCreate,
     recruiter_id: str = Depends(require_recruiter),
@@ -38,7 +38,8 @@ async def create_job(
     return await use_case.execute(job_in, recruiter_id)
 
 
-@router.get("/", response_model=List[JobResponse])
+# --- FIX: Empty string matches /jobs exactly ---
+@router.get("", response_model=List[JobResponse])
 async def list_jobs(
     q: Optional[str] = None,
     limit: int = Query(10, ge=1),

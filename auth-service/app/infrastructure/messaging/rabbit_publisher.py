@@ -1,5 +1,7 @@
 import json
 import aio_pika
+import asyncio
+import logging
 from app.application.interfaces.messenger import IIdentityEventPublisher
 
 
@@ -11,12 +13,23 @@ class RabbitMQPublisher(IIdentityEventPublisher):
         self.exchange = None
 
     async def connect(self):
-        self.connection = await aio_pika.connect_robust(self.connection_url)
-        self.channel = await self.connection.channel()
-        # Declare a Topic Exchange
-        self.exchange = await self.channel.declare_exchange(
-            "user_events", aio_pika.ExchangeType.TOPIC, durable=True
-        )
+        retries = 10
+        while retries > 0:
+            try:
+                self.connection = await aio_pika.connect_robust(
+                    self.connection_url, timeout=20
+                )
+                self.channel = await self.connection.channel()
+                self.exchange = await self.channel.declare_exchange(
+                    "user_events", aio_pika.ExchangeType.TOPIC, durable=True
+                )
+                logging.info("Successfully connected to RabbitMQ")
+                return
+            except Exception as e:
+                retries -= 1
+                logging.warning(f"Waiting for RabbitMQ... ({retries} retries left)")
+                await asyncio.sleep(5)
+        raise Exception("RabbitMQ connection timed out")
 
     async def close(self):
         if self.connection:
@@ -34,6 +47,7 @@ class RabbitMQPublisher(IIdentityEventPublisher):
             routing_key=routing_key,
         )
 
+    # --- ADDED THESE MISSING METHODS ---
     async def publish_user_deleted(self, user_id: str) -> None:
         payload = {"user_id": user_id, "event": "user.deleted"}
         await self._publish("user.deleted", payload)

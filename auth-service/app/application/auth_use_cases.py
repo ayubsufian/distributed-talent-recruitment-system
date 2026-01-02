@@ -1,5 +1,5 @@
 from typing import Optional
-from app.domain.models import User, UserCreate, UserRole
+from app.domain.models import User, UserCreate
 from app.application.interfaces.repository import IUserRepository
 from app.application.interfaces.security import IPasswordManager
 from app.application.interfaces.messenger import IIdentityEventPublisher
@@ -20,9 +20,10 @@ class RegisterUserUseCase:
         # 1. Check if user already exists
         existing_user = await self.repo.get_by_email(user_in.email)
         if existing_user:
-            raise ValueError("User with this email already exists")
+            # This triggers the 400 Bad Request in the router
+            raise ValueError(f"Account with email {user_in.email} already exists")
 
-        # 2. Hash the password
+        # 2. Hash the password (using the direct bcrypt implementation)
         hashed_pw = self.password_manager.get_password_hash(user_in.password)
 
         # 3. Create User Entity
@@ -33,10 +34,10 @@ class RegisterUserUseCase:
         # 4. Save to Repository
         saved_user = await self.repo.save(new_user)
 
-        # 5. Publish Event (Optional based on requirements, but good practice)
+        # 5. Publish Event (Now verified to exist in RabbitMQPublisher)
         if saved_user.id:
             await self.messenger.publish_user_registered(
-                saved_user.id, saved_user.email
+                str(saved_user.id), saved_user.email  # Explicit string cast for safety
             )
 
         return saved_user
@@ -53,7 +54,7 @@ class LoginUserUseCase:
         if not user:
             return None
 
-        # 2. Verify Password
+        # 2. Verify Password (using bcrypt.checkpw)
         if not self.password_manager.verify_password(password, user.hashed_password):
             return None
 

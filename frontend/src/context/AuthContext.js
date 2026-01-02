@@ -10,22 +10,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Helper: Converts Backend Error Objects (422s) into readable strings
+  // Now includes field location for easier debugging
   const extractErrorMessage = (error, defaultMsg) => {
     if (error.response?.data?.detail) {
       const detail = error.response.data.detail;
 
-      // FastAPI/Pydantic returns validation errors as an array of objects
+      // Handle FastAPI array-style validation errors
       if (Array.isArray(detail)) {
-        // Return the first error message (e.g., "value is not a valid email")
-        return detail[0].msg || defaultMsg;
+        const firstError = detail[0];
+        // Extract the field name (last item in loc array, e.g., ["body", "email"])
+        const fieldName = firstError.loc
+          ? firstError.loc[firstError.loc.length - 1]
+          : 'field';
+        const message = firstError.msg || 'is invalid';
+
+        return `Error in ${fieldName}: ${message}`;
       }
 
-      // If it's just a plain string (like a 401 or 400 error)
+      // Handle simple string errors (e.g., 401 Unauthorized)
       if (typeof detail === 'string') {
         return detail;
       }
     }
-    return error.message || defaultMsg;
+
+    // Fallback for network errors or other issues
+    return error.response?.data?.message || error.message || defaultMsg;
   };
 
   // Helper: Decode JWT and set state
